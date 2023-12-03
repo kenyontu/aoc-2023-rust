@@ -57,7 +57,6 @@ fn solve(input: String) -> u32 {
                 y: line_idx,
                 len: num.len(),
             });
-            num.clear();
         }
     }
 
