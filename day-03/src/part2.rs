@@ -64,6 +64,10 @@ fn solve(input: String) -> u32 {
     let mut sum = 0;
 
     for sym in syms.iter() {
+        if !sym.is_gear {
+            continue;
+        }
+
         let mut adjacent_count = 0;
         let mut gear_ratio = 1;
 
@@ -79,7 +83,7 @@ fn solve(input: String) -> u32 {
             }
         }
 
-        if sym.is_gear && adjacent_count == 2 {
+        if adjacent_count == 2 {
             sum += gear_ratio;
         }
     }
