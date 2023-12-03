@@ -83,7 +83,7 @@ mod tests {
     use super::*;
     use std::fs;
 
-    fn read_input(path: &str) -> String {
+    fn read_input(path: &str) -> string {
         fs::read_to_string(path).expect(&format!("{path} file not found"))
     }
 
@@ -100,6 +100,6 @@ mod tests {
         let input = read_input("input.txt");
         let sum = get_power_sum(input);
 
-        println!("Sum: {sum}");
+        println!("sum: {sum}");
     }
 }
