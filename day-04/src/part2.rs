@@ -32,10 +32,12 @@ fn solve(input: String) -> u32 {
         });
 
         split.next().unwrap().split(' ').for_each(|item| {
-            if !item.is_empty() {
-                if set_nums.contains(&item.parse::<u32>().unwrap()) {
-                    matches += 1;
-                }
+            if item.is_empty() {
+                return;
+            }
+
+            if set_nums.contains(&item.parse::<u32>().unwrap()) {
+                matches += 1;
             }
         });
 
