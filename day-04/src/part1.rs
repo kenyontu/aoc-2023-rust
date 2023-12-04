@@ -4,30 +4,30 @@ fn solve(input: String) -> u32 {
     let mut sum = 0;
 
     for line in input.lines() {
-        let mut a = line.split(&[':', '|']).skip(1);
+        let mut split = line.split(&[':', '|']).skip(1);
         let mut set_nums: HashSet<u32> = HashSet::new();
 
-        let mut val = 0;
+        let mut points = 0;
 
-        a.next().unwrap().split(' ').for_each(|item| {
+        split.next().unwrap().split(' ').for_each(|item| {
             if !item.is_empty() {
                 set_nums.insert(item.parse::<u32>().unwrap());
             }
         });
 
-        a.next().unwrap().split(' ').for_each(|item| {
+        split.next().unwrap().split(' ').for_each(|item| {
             if !item.is_empty() {
                 if set_nums.contains(&item.parse::<u32>().unwrap()) {
-                    if val == 0 {
-                        val = 1;
+                    if points == 0 {
+                        points = 1;
                     } else {
-                        val *= 2
+                        points *= 2
                     }
                 }
             }
         });
 
-        sum += val;
+        sum += points;
     }
 
     sum
