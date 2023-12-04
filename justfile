@@ -1,2 +1,2 @@
 test day part:
-  cargo watch -x "test -p day-0{{day}} part{{part}} -- --nocapture"
+  cargo watch -x "test -p day-{{day}} part{{part}} -- --nocapture"

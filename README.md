@@ -13,5 +13,5 @@ Each day is a library crate in the workspace, you execute the tests of a specifi
 just test <day> <part>
 
 # Example - Executing tests for the second part of the first day:
-just test 1 2
+just test 01 2
 ```
