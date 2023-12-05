@@ -59,6 +59,6 @@ mod tests {
         let solution = solve(input);
 
         println!("Solution: {solution}");
-        assert_eq!(solution, 535078)
+        assert_eq!(solution, 15205)
     }
 }
