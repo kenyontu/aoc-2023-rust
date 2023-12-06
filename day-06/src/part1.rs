@@ -15,37 +15,19 @@ pub fn solve(input: String) -> u32 {
     let times = parse_line(lines.next().unwrap());
     let distances = parse_line(lines.next().unwrap());
 
-    let mut result = 0;
+    let mut result = 1;
 
     let mut i = 0;
     while i < times.len() {
         let time_limit = times[i];
         let record = distances[i];
 
-        let mut ways_to_win = 0;
+        let ways_to_win = (1..time_limit)
+            .map(|pressed_time| (time_limit - pressed_time) * pressed_time)
+            .filter(|distance| distance > &record)
+            .fold(0_u32, |acc, _| acc + 1);
 
-        let mut pressed_time = 1;
-        loop {
-            let distance_per_ms = pressed_time;
-            let distance = (time_limit - pressed_time) * distance_per_ms;
-            if distance <= 0 {
-                break;
-            }
-            if distance > record {
-                ways_to_win += 1;
-            }
-            pressed_time += 1;
-        }
-
-        if ways_to_win == 0 {
-            continue;
-        }
-
-        if result == 0 {
-            result = ways_to_win;
-        } else {
-            result *= ways_to_win
-        }
+        result *= ways_to_win;
 
         i += 1;
     }
