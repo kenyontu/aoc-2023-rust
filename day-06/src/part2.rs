@@ -3,12 +3,7 @@ fn parse_line(line: &str) -> u64 {
         .skip(1)
         .next()
         .unwrap()
-        .split(' ')
-        .filter(|x| !x.is_empty())
-        .fold(String::new(), |mut s, n| {
-            s.push_str(n);
-            s
-        })
+        .replace(' ', "")
         .parse()
         .unwrap()
 }
@@ -19,29 +14,18 @@ pub fn solve(input: String) -> u64 {
     let time_limit = parse_line(lines.next().unwrap());
     let record = parse_line(lines.next().unwrap());
 
-    let mut result = 0;
-    let mut ways_to_win = 0;
+    let distances = (1..time_limit).map(|pressed_time| (time_limit - pressed_time) * pressed_time);
 
-    let mut pressed_time = 1;
-    loop {
-        let distance_per_ms = pressed_time;
-        let distance = (time_limit - pressed_time) * distance_per_ms;
-        if distance <= 0 {
-            break;
-        }
-        if distance > record {
-            ways_to_win += 1;
-        }
-        pressed_time += 1;
-    }
-
-    if result == 0 {
-        result = ways_to_win;
-    } else {
-        result *= ways_to_win
-    }
-
-    result
+    distances.fold(
+        0_u64,
+        |acc, distance| {
+            if distance > record {
+                acc + 1
+            } else {
+                acc
+            }
+        },
+    )
 }
 
 #[cfg(test)]
