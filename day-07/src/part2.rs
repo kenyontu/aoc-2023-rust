@@ -24,7 +24,7 @@ impl HandType {
         }
     }
 
-    fn get_type(labels: &Vec<Label>) -> Self {
+    fn from_labels(labels: &Vec<Label>) -> Self {
         let mut jokers = 0;
 
         let map: HashMap<char, u32> = labels.iter().fold(HashMap::new(), |mut acc, c| {
@@ -82,16 +82,16 @@ impl HandType {
 #[derive(Debug)]
 struct Hand {
     hand_type: HandType,
-    val: Vec<Label>,
+    labels: Vec<Label>,
     bid: u32,
 }
 
 impl Hand {
-    fn new(val: Vec<Label>, bid: u32) -> Self {
-        let hand_type = HandType::get_type(&val);
+    fn new(labels: Vec<Label>, bid: u32) -> Self {
+        let hand_type = HandType::from_labels(&labels);
 
         Hand {
-            val,
+            labels,
             bid,
             hand_type,
         }
@@ -105,9 +105,9 @@ impl Hand {
         }
 
         for i in 0..5 {
-            if self.val[i].get_point() > other.val[i].get_point() {
+            if self.labels[i].get_point() > other.labels[i].get_point() {
                 return Ordering::Greater;
-            } else if self.val[i].get_point() < other.val[i].get_point() {
+            } else if self.labels[i].get_point() < other.labels[i].get_point() {
                 return Ordering::Less;
             }
         }

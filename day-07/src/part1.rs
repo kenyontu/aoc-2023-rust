@@ -24,7 +24,7 @@ impl HandType {
         }
     }
 
-    fn get_type(labels: &Vec<Label>) -> Self {
+    fn from_labels(labels: &Vec<Label>) -> Self {
         let map: HashMap<char, u32> = labels.iter().fold(HashMap::new(), |mut acc, c| {
             acc.entry(c.val)
                 .and_modify(|count| *count = *count + 1)
@@ -34,29 +34,35 @@ impl HandType {
 
         let counts: Vec<u32> = map.into_values().collect();
 
-        if counts.len() == 1 {
-            return Self::FiveOfAKind;
-        }
-
+        // highcard
         if counts.len() == 5 {
             return Self::HighCard;
         }
 
-        if counts.len() == 2 {
-            if counts[0] == 4 || counts[1] == 4 {
-                return Self::FourOfAKind;
-            }
-
-            if (counts[0] == 3 && counts[1] == 2) || (counts[0] == 2 && counts[1] == 3) {
-                return Self::FullHouse;
-            }
+        // five of a kind
+        if counts.len() == 1 {
+            return Self::FiveOfAKind;
         }
 
-        if counts.len() == 3 {
-            if (0..3).any(|a| counts[a] == 3) {
-                return Self::ThreeOfAKind;
-            }
+        // four of a kind
+        if counts.iter().any(|c| *c == 4) {
+            return Self::FourOfAKind;
+        }
 
+        // full house
+        if counts.len() == 2 && (counts[0] == 3 && counts[1] == 2)
+            || (counts[0] == 2 && counts[1] == 3)
+        {
+            return Self::FullHouse;
+        }
+
+        // three of a kind
+        if counts.len() == 3 && counts.iter().any(|c| *c == 3) {
+            return Self::ThreeOfAKind;
+        }
+
+        // Two pairs
+        if counts.len() == 3 {
             if counts.iter().filter(|c| **c == 2_u32).count() == 2_usize {
                 return Self::TwoPair;
             }
@@ -69,16 +75,16 @@ impl HandType {
 #[derive(Debug)]
 struct Hand {
     hand_type: HandType,
-    val: Vec<Label>,
+    labels: Vec<Label>,
     bid: u32,
 }
 
 impl Hand {
-    fn new(val: Vec<Label>, bid: u32) -> Self {
-        let hand_type = HandType::get_type(&val);
+    fn new(labels: Vec<Label>, bid: u32) -> Self {
+        let hand_type = HandType::from_labels(&labels);
 
         Hand {
-            val,
+            labels,
             bid,
             hand_type,
         }
@@ -92,9 +98,9 @@ impl Hand {
         }
 
         for i in 0..5 {
-            if self.val[i].get_point() > other.val[i].get_point() {
+            if self.labels[i].get_point() > other.labels[i].get_point() {
                 return Ordering::Greater;
-            } else if self.val[i].get_point() < other.val[i].get_point() {
+            } else if self.labels[i].get_point() < other.labels[i].get_point() {
                 return Ordering::Less;
             }
         }
