@@ -1,7 +1,3 @@
-enum AocError {
-    ParseGameError(String),
-}
-
 #[derive(Debug)]
 struct Num {
     val: u32,
@@ -16,7 +12,7 @@ struct Sym {
     y: usize,
 }
 
-fn solve(input: String) -> u32 {
+pub fn solve(input: &str) -> u32 {
     let mut nums: Vec<Num> = Vec::new();
     let mut syms: Vec<Sym> = Vec::new();
 
@@ -76,32 +72,4 @@ fn solve(input: String) -> u32 {
     }
 
     sum
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs;
-
-    fn read_input(path: &str) -> String {
-        fs::read_to_string(path).expect(&format!("{path} file not found"))
-    }
-
-    #[test]
-    fn solve_input_1() {
-        let input = read_input("part1_input1.txt");
-        let solution = solve(input);
-
-        println!("{solution}");
-        assert_eq!(solution, 4361);
-    }
-
-    #[test]
-    fn solve_input() {
-        let input = read_input("input.txt");
-        let solution = solve(input);
-
-        println!("Solution: {solution}");
-        assert_eq!(solution, 535078)
-    }
 }
