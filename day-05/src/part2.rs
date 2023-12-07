@@ -20,7 +20,7 @@ struct Category {
     ranges: Vec<Range>,
 }
 
-pub fn solve(input: String) -> u64 {
+pub fn solve(input: &str) -> u64 {
     let mut lines = input.lines();
 
     let first_line = lines.next().unwrap();

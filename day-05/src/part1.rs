@@ -20,7 +20,7 @@ struct Category {
     ranges: Vec<Range>,
 }
 
-pub fn solve(input: String) -> u32 {
+pub fn solve(input: &String) -> u32 {
     let mut lines = input.lines();
 
     let mut seeds: Vec<u32> = lines
