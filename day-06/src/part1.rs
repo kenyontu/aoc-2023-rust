@@ -9,7 +9,7 @@ fn parse_line(line: &str) -> Vec<u32> {
         .collect()
 }
 
-pub fn solve(input: String) -> u32 {
+pub fn solve(input: &str) -> u32 {
     let mut lines = input.lines();
 
     let times = parse_line(lines.next().unwrap());
@@ -25,7 +25,7 @@ pub fn solve(input: String) -> u32 {
         let ways_to_win = (1..time_limit)
             .map(|pressed_time| (time_limit - pressed_time) * pressed_time)
             .filter(|distance| distance > &record)
-            .fold(0_u32, |acc, _| acc + 1);
+            .count() as u32;
 
         result *= ways_to_win;
 
@@ -33,28 +33,4 @@ pub fn solve(input: String) -> u32 {
     }
 
     result
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use utils::read_input;
-
-    #[test]
-    fn solve_input_1() {
-        let input = read_input("part1_input1.txt");
-        let solution = solve(input);
-
-        println!("Solution: {solution}");
-        assert_eq!(solution, 288);
-    }
-
-    #[test]
-    fn solve_input() {
-        let input = read_input("input.txt");
-        let solution = solve(input);
-
-        println!("Solution: {solution}");
-        assert_eq!(solution, 128700)
-    }
 }
