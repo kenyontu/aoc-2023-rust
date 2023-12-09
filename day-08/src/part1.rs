@@ -4,17 +4,16 @@ pub fn solve(input: &str) -> u32 {
     let mut lines = input.lines();
     let directions = lines.next().unwrap().chars().collect::<Vec<char>>();
 
-    let map: HashMap<String, (String, String)> =
-        lines.skip(1).fold(HashMap::new(), |mut map, line| {
-            let pos = line[0..3].to_string();
-            let l = line[7..10].to_string();
-            let r = line[12..15].to_string();
+    let map: HashMap<&str, (&str, &str)> = lines.skip(1).fold(HashMap::new(), |mut map, line| {
+        let pos = &line[0..3];
+        let l = &line[7..10];
+        let r = &line[12..15];
 
-            map.insert(pos, (l, r));
-            map
-        });
+        map.insert(pos, (&l, &r));
+        map
+    });
 
-    let mut pos = String::from("AAA");
+    let mut pos = "AAA";
     let mut steps = 0;
 
     for dir in directions.iter().cycle() {
@@ -22,11 +21,10 @@ pub fn solve(input: &str) -> u32 {
             return steps;
         }
 
-        let (l, r) = &map[&pos];
-        if *dir == 'R' {
-            pos = r.clone();
+        if *dir == 'L' {
+            pos = map[pos].0;
         } else {
-            pos = l.clone();
+            pos = map[pos].1;
         }
         steps += 1
     }

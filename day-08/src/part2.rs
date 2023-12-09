@@ -1,41 +1,56 @@
 use std::collections::HashMap;
 
-pub fn solve(input: &str) -> u128 {
+fn gcd(a: &u64, b: &u64) -> u64 {
+    let mut a = a.clone();
+    let mut b = b.clone();
+
+    while b != 0 {
+        let temp = a;
+        a = b;
+        b = temp % b;
+    }
+
+    a
+}
+
+fn lcm(a: &u64, b: &u64) -> u64 {
+    (a / gcd(a, b)) * b
+}
+
+pub fn solve(input: &str) -> u64 {
     let mut lines = input.lines();
     let directions = lines.next().unwrap().chars().collect::<Vec<char>>();
 
-    let mut starting_nodes: Vec<String> = Vec::new();
+    let mut starting_nodes: Vec<&str> = Vec::new();
 
-    let map: HashMap<String, (String, String)> =
-        lines.skip(1).fold(HashMap::new(), |mut map, line| {
-            let pos = line[0..3].to_string();
-            let l = line[7..10].to_string();
-            let r = line[12..15].to_string();
+    let map: HashMap<&str, (&str, &str)> = lines.skip(1).fold(HashMap::new(), |mut map, line| {
+        let pos = &line[0..3];
+        let l = &line[7..10];
+        let r = &line[12..15];
 
-            if pos.chars().nth(2).unwrap() == 'A' {
-                starting_nodes.push(pos.clone());
-            }
+        if pos.ends_with('A') {
+            starting_nodes.push(pos);
+        }
 
-            map.insert(pos, (l, r));
-            map
-        });
+        map.insert(pos, (l, r));
+        map
+    });
 
-    // how many steps it takes for each node to reach a node ending with Z:
-    let steps: Vec<u128> = starting_nodes
+    // how many steps it takes for each starting node to reach a node ending with Z:
+    let steps_to_z_by_node: Vec<u64> = starting_nodes
         .iter()
         .map(|node| {
             let mut count = 0;
-            let mut n = node.clone();
+            let mut n = *node;
             for dir in directions.iter().cycle() {
-                if n.chars().nth(2).unwrap() == 'Z' {
+                if n.ends_with('Z') {
                     return count;
                 }
 
-                let (l, r) = &map[&n];
-                if *dir == 'R' {
-                    n = r.clone();
+                if *dir == 'L' {
+                    n = map[n].0;
                 } else {
-                    n = l.clone();
+                    n = map[n].1;
                 }
                 count += 1
             }
@@ -43,10 +58,7 @@ pub fn solve(input: &str) -> u128 {
         })
         .collect();
 
-    let l = steps[steps.len() - 1];
-
-    steps[0..steps.len() - 1]
+    steps_to_z_by_node[1..]
         .iter()
-        .rev()
-        .fold(l, |n, next| num::integer::lcm(n, next.clone()))
+        .fold(steps_to_z_by_node[0], |acc, next| lcm(&acc, next))
 }
