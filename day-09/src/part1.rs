@@ -23,8 +23,7 @@ pub fn solve(input: &str) -> i64 {
                 nums = differences;
             }
 
-            let sum = last_nums.iter().sum::<i64>();
-            sum
+            last_nums.iter().sum::<i64>()
         })
         .sum()
 }
