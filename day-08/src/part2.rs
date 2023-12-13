@@ -58,7 +58,9 @@ pub fn solve(input: &str) -> u64 {
         })
         .collect();
 
-    steps_to_z_by_node[1..]
+    steps_to_z_by_node
         .iter()
-        .fold(steps_to_z_by_node[0], |acc, next| lcm(&acc, next))
+        .copied()
+        .reduce(|acc, e| lcm(&acc, &e))
+        .unwrap()
 }
