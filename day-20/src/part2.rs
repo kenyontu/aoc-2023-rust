@@ -61,17 +61,23 @@ enum Module<'a> {
 }
 
 impl<'a> Module<'a> {
-    fn receive_pulse(&mut self, pulse: &Pulse, source: ModuleName) -> Vec<(ModuleName, Pulse)> {
+    fn receive_pulse(
+        &mut self,
+        pulse: &Pulse,
+        source: ModuleName,
+    ) -> Option<Vec<(ModuleName, Pulse)>> {
         if let Module::FlipFlop(f) = self {
             return match pulse {
-                Pulse::High => vec![],
+                Pulse::High => None,
                 Pulse::Low => {
                     f.on = !f.on;
                     let pulse_to_send = if f.on { Pulse::High } else { Pulse::Low };
-                    f.destinations
-                        .iter()
-                        .map(|module| (module.clone(), pulse_to_send.clone()))
-                        .collect::<Vec<_>>()
+                    Some(
+                        f.destinations
+                            .iter()
+                            .map(|module| (module.clone(), pulse_to_send.clone()))
+                            .collect::<Vec<_>>(),
+                    )
                 }
             };
         }
@@ -88,19 +94,21 @@ impl<'a> Module<'a> {
                 Pulse::High
             };
 
-            return c
-                .destinations
-                .iter()
-                .map(|module| (module.clone(), pulse_to_send.clone()))
-                .collect::<Vec<_>>();
+            return Some(
+                c.destinations
+                    .iter()
+                    .map(|module| (module.clone(), pulse_to_send.clone()))
+                    .collect::<Vec<_>>(),
+            );
         }
 
         if let Module::Broadcaster(b) = self {
-            return b
-                .destinations
-                .iter()
-                .map(|module| (module.clone(), Pulse::Low))
-                .collect::<Vec<_>>();
+            return Some(
+                b.destinations
+                    .iter()
+                    .map(|module| (module.clone(), Pulse::Low))
+                    .collect::<Vec<_>>(),
+            );
         }
 
         unreachable!()
@@ -203,10 +211,12 @@ pub fn solve(input: &str) -> u64 {
 
     while button_presses < 50000 {
         button_presses += 1;
+
         modules
             .get_mut(&broadcaster)
             .unwrap()
             .receive_pulse(&Pulse::High, String::from(""))
+            .unwrap()
             .into_iter()
             .for_each(|d| queue.push_back((d.0, d.1, broadcaster.clone())));
 
@@ -225,14 +235,15 @@ pub fn solve(input: &str) -> u64 {
                     .or_insert(vec![button_presses]);
             }
 
-            modules
+            if let Some(dest) = modules
                 .get_mut(&module)
                 .unwrap()
                 .receive_pulse(&pulse, source)
-                .into_iter()
-                .for_each(|d| {
+            {
+                dest.into_iter().for_each(|d| {
                     queue.push_back((d.0, d.1, module.clone()));
                 });
+            }
         }
     }
 
