@@ -4,7 +4,7 @@ mod part1;
 mod part2;
 
 fn main() {
-    let input = read_input("d");
+    let input = read_input("input.txt");
 
     let sol1 = part1::solve(&input);
     println!("1: {sol1}");
