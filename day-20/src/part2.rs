@@ -8,94 +8,102 @@ enum Pulse {
     High,
 }
 
-trait Module {
-    fn receive_pulse(&mut self, pulse: Pulse, source: ModuleName) -> Vec<(ModuleName, Pulse)>;
-}
-
 #[derive(Debug)]
-struct FlipFlop {
+struct FlipFlop<'a> {
+    destinations: &'a Vec<ModuleName>,
     on: bool,
-    destinations: Vec<ModuleName>,
 }
 
-impl FlipFlop {
-    fn new(destinations: Vec<ModuleName>) -> Self {
-        FlipFlop {
-            on: false,
+impl<'a> FlipFlop<'a> {
+    fn new(destinations: &'a Vec<ModuleName>) -> Self {
+        Self {
             destinations,
-        }
-    }
-}
-
-impl Module for FlipFlop {
-    fn receive_pulse(&mut self, pulse: Pulse, _source: ModuleName) -> Vec<(ModuleName, Pulse)> {
-        match pulse {
-            Pulse::High => vec![],
-            Pulse::Low => {
-                self.on = !self.on;
-                let pulse_to_send = if self.on { Pulse::High } else { Pulse::Low };
-                self.destinations
-                    .iter()
-                    .map(|module| (module.clone(), pulse_to_send.clone()))
-                    .collect::<Vec<_>>()
-            }
+            on: false,
         }
     }
 }
 
 #[derive(Debug)]
-struct Conjunction {
+struct Conjunction<'a> {
+    destinations: &'a Vec<ModuleName>,
     received: HashMap<ModuleName, Pulse>,
-    destinations: Vec<ModuleName>,
 }
 
-impl Conjunction {
-    fn new(destinations: Vec<ModuleName>, received_vec: Vec<ModuleName>) -> Self {
-        let received = received_vec
-            .into_iter()
-            .fold(HashMap::new(), |mut map, module| {
-                map.insert(module, Pulse::Low);
-                map
-            });
+impl<'a> Conjunction<'a> {
+    fn new(destinations: &'a Vec<ModuleName>, received_vec: &'a Vec<ModuleName>) -> Self {
+        let received = received_vec.iter().fold(HashMap::new(), |mut map, module| {
+            map.insert(module.clone(), Pulse::Low);
+            map
+        });
 
-        Conjunction {
+        Self {
             received,
             destinations,
         }
     }
 }
 
-impl Module for Conjunction {
-    fn receive_pulse(&mut self, pulse: Pulse, source: ModuleName) -> Vec<(ModuleName, Pulse)> {
-        self.received
-            .entry(source)
-            .and_modify(|p| *p = pulse.clone())
-            .or_insert(pulse);
+#[derive(Debug)]
+struct Broadcaster<'a> {
+    destinations: &'a Vec<ModuleName>,
+}
 
-        let pulse_to_send = if self.received.values().all(|p| p == &Pulse::High) {
-            Pulse::Low
-        } else {
-            Pulse::High
-        };
-
-        self.destinations
-            .iter()
-            .map(|module| (module.clone(), pulse_to_send.clone()))
-            .collect::<Vec<_>>()
+impl<'a> Broadcaster<'a> {
+    fn new(destinations: &'a Vec<ModuleName>) -> Self {
+        Self { destinations }
     }
 }
 
-#[derive(Debug)]
-struct Broadcaster {
-    destinations: Vec<ModuleName>,
+enum Module<'a> {
+    FlipFlop(FlipFlop<'a>),
+    Conjunction(Conjunction<'a>),
+    Broadcaster(Broadcaster<'a>),
 }
 
-impl Module for Broadcaster {
-    fn receive_pulse(&mut self, _pulse: Pulse, _source: ModuleName) -> Vec<(ModuleName, Pulse)> {
-        self.destinations
-            .iter()
-            .map(|module| (module.clone(), Pulse::Low))
-            .collect::<Vec<_>>()
+impl<'a> Module<'a> {
+    fn receive_pulse(&mut self, pulse: &Pulse, source: ModuleName) -> Vec<(ModuleName, Pulse)> {
+        if let Module::FlipFlop(f) = self {
+            return match pulse {
+                Pulse::High => vec![],
+                Pulse::Low => {
+                    f.on = !f.on;
+                    let pulse_to_send = if f.on { Pulse::High } else { Pulse::Low };
+                    f.destinations
+                        .iter()
+                        .map(|module| (module.clone(), pulse_to_send.clone()))
+                        .collect::<Vec<_>>()
+                }
+            };
+        }
+
+        if let Module::Conjunction(c) = self {
+            c.received
+                .entry(source)
+                .and_modify(|p| *p = pulse.clone())
+                .or_insert(pulse.clone());
+
+            let pulse_to_send = if c.received.values().all(|p| p == &Pulse::High) {
+                Pulse::Low
+            } else {
+                Pulse::High
+            };
+
+            return c
+                .destinations
+                .iter()
+                .map(|module| (module.clone(), pulse_to_send.clone()))
+                .collect::<Vec<_>>();
+        }
+
+        if let Module::Broadcaster(b) = self {
+            return b
+                .destinations
+                .iter()
+                .map(|module| (module.clone(), Pulse::Low))
+                .collect::<Vec<_>>();
+        }
+
+        unreachable!()
     }
 }
 
@@ -117,57 +125,63 @@ fn lcm(a: &u64, b: &u64) -> u64 {
 }
 
 pub fn solve(input: &str) -> u64 {
-    let mut modules: HashMap<ModuleName, Box<dyn Module>> = HashMap::new();
-    let mut inputs: HashMap<ModuleName, Vec<ModuleName>> = HashMap::new();
-
-    input
+    let mod_and_dest = input
         .lines()
-        .map(|l| {
-            l.split_once(" -> ")
-                .map(|(str_name, str_destinations)| {
-                    let destinations = str_destinations
+        .flat_map(|l| {
+            l.split_once(" -> ").map(|(str_name, str_destinations)| {
+                (
+                    str_name,
+                    str_destinations
                         .split(", ")
-                        .map(|s| {
-                            inputs
-                                .entry(s.to_owned())
-                                .and_modify(|i| i.push(str_name[1..].to_owned()))
-                                .or_insert(vec![str_name[1..].to_owned()]);
-
-                            s.to_owned()
-                        })
-                        .collect::<Vec<_>>();
-
-                    (str_name, destinations)
-                })
-                .unwrap()
+                        .map(|s| s.to_owned())
+                        .collect::<Vec<_>>(),
+                )
+            })
         })
-        .collect::<Vec<_>>()
-        .into_iter()
-        .for_each(|(str_name, destinations)| {
-            if str_name == "broadcaster" {
-                modules.insert(
-                    String::from("broadcaster"),
-                    Box::new(Broadcaster { destinations }),
-                );
-            } else if str_name.chars().nth(0).unwrap() == '%' {
-                modules.insert(
-                    str_name[1..].to_owned(),
-                    Box::new(FlipFlop::new(destinations)),
-                );
-            } else if str_name.chars().nth(0).unwrap() == '&' {
-                let inputs = match inputs.get(&str_name[1..]) {
-                    Some(inputs) => inputs.clone(),
-                    None => vec![],
-                };
+        .collect::<Vec<_>>();
 
-                modules.insert(
-                    str_name[1..].to_owned(),
-                    Box::new(Conjunction::new(destinations, inputs)),
-                );
-            } else {
-                unreachable!()
-            }
-        });
+    let inputs: HashMap<ModuleName, Vec<ModuleName>> =
+        mod_and_dest
+            .iter()
+            .fold(HashMap::new(), |mut map, (str_name, destinations)| {
+                let name = str_name.replace(['&', '%'], "");
+                destinations.iter().for_each(|m| {
+                    map.entry(m.to_owned())
+                        .and_modify(|v| v.push(name.clone()))
+                        .or_insert(vec![name.clone()]);
+                });
+
+                map
+            });
+
+    let mut modules: HashMap<ModuleName, Module> =
+        mod_and_dest
+            .iter()
+            .fold(HashMap::new(), |mut map, (str_name, destinations)| {
+                if str_name == &"broadcaster" {
+                    map.insert(
+                        str_name[..].to_owned(),
+                        Module::Broadcaster(Broadcaster::new(destinations)),
+                    );
+                } else if str_name.as_bytes()[0] == b'%' {
+                    map.insert(
+                        str_name[1..].to_owned(),
+                        Module::FlipFlop(FlipFlop::new(destinations)),
+                    );
+                } else if str_name.as_bytes()[0] == b'&' {
+                    map.insert(
+                        str_name[1..].to_owned(),
+                        Module::Conjunction(Conjunction::new(
+                            destinations,
+                            inputs.get(&str_name[1..]).unwrap(),
+                        )),
+                    );
+                } else {
+                    unreachable!()
+                }
+
+                map
+            });
 
     let mut queue: VecDeque<(ModuleName, Pulse, ModuleName)> = VecDeque::new();
 
@@ -185,17 +199,22 @@ pub fn solve(input: &str) -> u64 {
 
     let mut high_pulse_at: HashMap<ModuleName, Vec<u64>> = HashMap::new();
     let mut button_presses = 0_u64;
+    let broadcaster = String::from("broadcaster");
 
     while button_presses < 50000 {
         button_presses += 1;
         modules
-            .get_mut("broadcaster")
+            .get_mut(&broadcaster)
             .unwrap()
-            .receive_pulse(Pulse::High, String::from(""))
-            .iter()
-            .for_each(|d| queue.push_back((d.0.clone(), d.1.clone(), String::from("broadcaster"))));
+            .receive_pulse(&Pulse::High, String::from(""))
+            .into_iter()
+            .for_each(|d| queue.push_back((d.0, d.1, broadcaster.clone())));
 
         while let Some((module, pulse, source)) = queue.pop_front() {
+            if !modules.contains_key(&module) {
+                continue;
+            }
+
             if &module == rx_input
                 && matches!(pulse, Pulse::High)
                 && modules_to_track.contains(&source)
@@ -206,17 +225,13 @@ pub fn solve(input: &str) -> u64 {
                     .or_insert(vec![button_presses]);
             }
 
-            if !modules.contains_key(&module) {
-                continue;
-            }
-
             modules
                 .get_mut(&module)
                 .unwrap()
-                .receive_pulse(pulse, source)
-                .iter()
+                .receive_pulse(&pulse, source)
+                .into_iter()
                 .for_each(|d| {
-                    queue.push_back((d.0.clone(), d.1.clone(), module.clone()));
+                    queue.push_back((d.0, d.1, module.clone()));
                 });
         }
     }
